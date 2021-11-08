@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { ActivityIndicator } from 'react-native';
 import { HistoryCard } from '../../Components/HistoryCard';
 import {
     Container, Header, Title, Content, ChartContainer,
@@ -13,6 +13,8 @@ import { useTheme } from 'styled-components';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { addMonths, subMonths, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../../hooks/auth';
 
 interface TransactionData {
     type: 'positive' | 'negative';
@@ -31,12 +33,16 @@ interface CategoryData {
 }
 
 export function Resume() {
+    const [isLoading, setIsLoading] = useState(false)
     const [selectedDate, setSelectedDate] = useState(new Date);
     const [totalByCategories, setTotalByCategories] = useState<CategoryData[]>([])
 
     const theme = useTheme()
+    const { user } = useAuth();
 
     function handleDateChange(action: 'next' | 'prev') {
+        setIsLoading(true)
+
         if (action === 'next') {
             const newDate = addMonths(selectedDate, 1)
             setSelectedDate(newDate)
@@ -50,12 +56,9 @@ export function Resume() {
         }
     }
 
-    useEffect(() => {
-        console.log('dsd')
-        loadData()
-    }, [selectedDate])
     async function loadData() {
-        const dataKey = '@gofinances:transactions';
+        setIsLoading(true)
+        const dataKey = `@gofinances:transactions_user:${user.id}`;
         const data = await AsyncStorage.getItem(dataKey);
         const currentData = data ? JSON.parse(data) : [];
 
@@ -108,18 +111,29 @@ export function Resume() {
 
         });
         setTotalByCategories(totalByCategory)
+        setIsLoading(false)
     }
+
+
+    useFocusEffect(useCallback(() => {
+        loadData()
+    }, [selectedDate]));
+
+
 
     return (
         <Container>
+
+            
             <Header>
                 <Title>
                     Resumo por categoria
                 </Title>
             </Header>
 
+            {isLoading == true && <ActivityIndicator />}
 
-            <Content
+       {isLoading == false &&       <Content
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
                     paddingHorizontal: 24,
@@ -164,7 +178,7 @@ export function Resume() {
                         color={item.color}
                     />
                 ))}
-            </Content>
+            </Content>}
         </Container>
     )
 }
