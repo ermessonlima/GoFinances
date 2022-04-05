@@ -88,7 +88,7 @@ export default function Register() {
             name: 'Categoria',
             icon: 'shopping-bag'
         });
-
+        //@ts-ignore
         navigation.navigate('Listagem');
         } catch (error){
             console.log(error)
